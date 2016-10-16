@@ -1,34 +1,46 @@
 package de.kawumtech.ktha.restlib.registration;
 
+import java.io.IOException;
+
 import org.slf4j.LoggerFactory;
-import org.springframework.http.ResponseEntity;
-import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
-import org.springframework.web.client.RestClientException;
 
 import de.kawumtech.ktha.restlib.api.client.AbstractRestClient;
+import retrofit2.Response;
 
 public class RegistrationClient extends AbstractRestClient
 {
-
-	@Override
-	public void init(String restEndpoint)
+	private static final RegistrationClient INSTANCE = new RegistrationClient();
+	
+	private RegistrationClient()
+	{}
+	
+	public static RegistrationClient getInstance()
 	{
-		HttpComponentsClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory();
-		requestFactory.setConnectTimeout(2500);
-		requestFactory.setReadTimeout(2500);
-		requestFactory.setConnectionRequestTimeout(2500);
-		this.restTemplate.setRequestFactory(requestFactory);
-		this.restEndpoint = restEndpoint;
+		return RegistrationClient.INSTANCE;
 	}
 	
 	public RegistrationState registerSensor(String sensorName)
 	{
 		RegistrationState state = RegistrationState.UNDEFINED;
 		try
-		{			
-			ResponseEntity<RegistrationState> response = this.restTemplate.getForEntity(this.restEndpoint + "/api/register/" + sensorName, RegistrationState.class);
-			state = response.getBody();
-		} catch (RestClientException e)
+		{
+			Response<RegistrationState> response = this.createClient(RegistrationService.class).registerSensor(sensorName).execute();
+			state = response.body();
+		} catch (IOException e)
+		{
+			LoggerFactory.getLogger(this.getClass()).error(e.getMessage(), e);
+		}
+		return state;
+	}
+	
+	public RegistrationState registerActuator(String actuatorName)
+	{
+		RegistrationState state = RegistrationState.UNDEFINED;
+		try
+		{
+			Response<RegistrationState> response = this.createClient(RegistrationService.class).registerActuator(actuatorName).execute();
+			state = response.body();
+		} catch (IOException e)
 		{
 			LoggerFactory.getLogger(this.getClass()).error(e.getMessage(), e);
 		}

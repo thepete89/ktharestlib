@@ -1,38 +1,62 @@
 package de.kawumtech.ktha.restlib.sensor.client;
 
-import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
-import org.springframework.web.client.RestClientException;
+import java.io.IOException;
+import java.util.List;
+
+import org.slf4j.LoggerFactory;
 
 import de.kawumtech.ktha.restlib.api.client.AbstractRestClient;
 import de.kawumtech.ktha.restlib.sensor.pojo.SensorReading;
 
 public class SensorReadingClient extends AbstractRestClient
 {
-
-	@Override
-	public void init(String restEndpoint)
+	private static final SensorReadingClient INSTANCE = new SensorReadingClient();
+	
+	private SensorReadingClient()
+	{}
+	
+	public static SensorReadingClient getInstance()
 	{
-		HttpComponentsClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory();
-		requestFactory.setConnectTimeout(2500);
-		requestFactory.setReadTimeout(2500);
-		requestFactory.setConnectionRequestTimeout(2500);
-		this.restTemplate.setRequestFactory(requestFactory);
-		this.restEndpoint = restEndpoint;
+		return SensorReadingClient.INSTANCE;
 	}
 	
-	public void sendNumericReading(Double reading, String sensorName) throws RestClientException
+	public void sendNumericReading(Double reading, String sensorName)
 	{
 		SensorReading<Double> sensorReading = new SensorReading<Double>();
 		sensorReading.setSensorName(sensorName);
 		sensorReading.setValue(reading);
-		this.restTemplate.postForObject(this.restEndpoint + "/api/accept/numeric", sensorReading, Void.class);
+		try
+		{
+			this.createClient(SensorReadingService.class).sendNumericReading(sensorReading).execute();
+		} catch (IOException e)
+		{
+			LoggerFactory.getLogger(this.getClass()).error(e.getMessage(), e);
+		}
 	}
 	
-	public void sendBooleanReading(Boolean reading, String sensorName) throws RestClientException
+	public void sendBooleanReading(Boolean reading, String sensorName)
 	{
 		SensorReading<Boolean> sensorReading = new SensorReading<Boolean>();
 		sensorReading.setSensorName(sensorName);
 		sensorReading.setValue(reading);
-		this.restTemplate.postForObject(this.restEndpoint + "/api/accept/boolean", sensorReading, Void.class);
+		try
+		{
+			this.createClient(SensorReadingService.class).sendBooleanReading(sensorReading).execute();
+		} catch (IOException e)
+		{
+			LoggerFactory.getLogger(this.getClass()).error(e.getMessage(), e);
+		}
+	}
+	
+	@SuppressWarnings("rawtypes")
+	public void sendMultipleReadings(List<SensorReading> readings)
+	{
+		try
+		{
+			this.createClient(SensorReadingService.class).sendMultipleReadings(readings).execute();
+		} catch (IOException e)
+		{
+			LoggerFactory.getLogger(this.getClass()).error(e.getMessage(), e);
+		}
 	}
 }
